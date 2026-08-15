@@ -12,11 +12,20 @@ import { applyReadTool, READ_LIMIT, STREAM_MIN_SIZE } from './read.ts'
 import { applyWriteTool } from './write.ts'
 import { applyEditTool } from './edit.ts'
 import { applyReadImageTool } from './read-image.ts'
+import { applyAnalyzeImageTool } from './analyze-image.ts'
+import type { QwenImageAnalysisOptions } from './analyze-image.ts'
 import { READ_MAX_BYTES, READ_MAX_LINE_LENGTH } from './read-render.ts'
 import { FsSandboxController } from './sandbox.ts'
 
 /** Cordis plugin name used by loader diagnostics. */
 export const name = 'tool-fs'
+
+/** Default DashScope-compatible endpoint for the installed Qwen-VL skill. */
+const DEFAULT_QWEN_IMAGE_ANALYSIS_BASE_URL = 'https://dashscope.aliyuncs.com/compatible-mode/v1'
+/** Default environment variable holding the installed skill's DashScope key. */
+const DEFAULT_QWEN_IMAGE_ANALYSIS_API_KEY_ENV = 'DASHSCOPE_API_KEY'
+/** Default Qwen-VL model selected by the installed image-analysis skill. */
+const DEFAULT_QWEN_IMAGE_ANALYSIS_MODEL = 'qwen-vl-max'
 
 /** Services required by the filesystem tool suite. */
 export const inject = ['tools', 'fs', 'systemPrompt']
@@ -31,6 +40,12 @@ export interface Config {
   readMaxBytes?: number
   /** Files at or above this size stream instead of loading whole into memory. */
   readStreamMinSize?: number
+  /** Environment variable holding the DashScope key used by `analyze_image`. */
+  qwenImageAnalysisApiKeyEnv?: string
+  /** DashScope-compatible API root used by `analyze_image`. */
+  qwenImageAnalysisBaseUrl?: string
+  /** Qwen-VL model selected by `analyze_image` when its call omits `model`. */
+  qwenImageAnalysisModel?: string
 }
 
 export const Config: z<Config> = z.object({
@@ -38,6 +53,9 @@ export const Config: z<Config> = z.object({
   readMaxLineLength: z.number().default(READ_MAX_LINE_LENGTH),
   readMaxBytes: z.number().default(READ_MAX_BYTES),
   readStreamMinSize: z.number().default(STREAM_MIN_SIZE),
+  qwenImageAnalysisApiKeyEnv: z.string().default(DEFAULT_QWEN_IMAGE_ANALYSIS_API_KEY_ENV),
+  qwenImageAnalysisBaseUrl: z.string().default(DEFAULT_QWEN_IMAGE_ANALYSIS_BASE_URL),
+  qwenImageAnalysisModel: z.string().default(DEFAULT_QWEN_IMAGE_ANALYSIS_MODEL),
 })
 
 /** The shape after schemastery applied the defaults. */
@@ -50,6 +68,11 @@ function assertPositiveInteger(name: string, value: number): void {
   }
 }
 
+/** Reject a blank service endpoint, model, or environment-variable name at load time. */
+function assertNonBlank(name: string, value: string): void {
+  if (value.trim() === '') throw new Error(`tool-fs: ${name} must not be blank`)
+}
+
 /** Register the full `read`/`write`/`edit` filesystem tool suite, plus `read_image` while `attachments` is mounted. */
 export function apply(ctx: Context, config: Config): void {
   // schemastery (Config) has already filled every defaulted field.
@@ -58,6 +81,9 @@ export function apply(ctx: Context, config: Config): void {
   assertPositiveInteger('readMaxLineLength', resolved.readMaxLineLength)
   assertPositiveInteger('readMaxBytes', resolved.readMaxBytes)
   assertPositiveInteger('readStreamMinSize', resolved.readStreamMinSize)
+  assertNonBlank('qwenImageAnalysisApiKeyEnv', resolved.qwenImageAnalysisApiKeyEnv)
+  assertNonBlank('qwenImageAnalysisBaseUrl', resolved.qwenImageAnalysisBaseUrl)
+  assertNonBlank('qwenImageAnalysisModel', resolved.qwenImageAnalysisModel)
   applyReadTool(ctx, {
     limit: resolved.readLimit,
     maxLineLength: resolved.readMaxLineLength,
@@ -69,6 +95,12 @@ export function apply(ctx: Context, config: Config): void {
   // registers; the execute body keeps a defensive re-check for direct callers.
   ctx.inject(['attachments'], (imageCtx) => {
     applyReadImageTool(imageCtx)
+    const qwen: QwenImageAnalysisOptions = {
+      apiKeyEnv: resolved.qwenImageAnalysisApiKeyEnv,
+      baseUrl: resolved.qwenImageAnalysisBaseUrl,
+      model: resolved.qwenImageAnalysisModel,
+    }
+    applyAnalyzeImageTool(imageCtx, qwen)
   })
   // One escalation API shared by both mutating tools: advertisement gating,
   // per-call policy resolution, and denial-marker mapping, all keyed off whether

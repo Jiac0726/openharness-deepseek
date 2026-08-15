@@ -379,6 +379,73 @@ export const SERVICE_API: readonly ServiceApiEntry[] = [
     ],
   },
   {
+    key: 'browser',
+    summary: 'Provider-neutral interactive browser runtime.',
+    description: 'Provider-neutral interactive browser runtime.',
+    methods: [
+      {
+        signature: 'registerProvider(provider: BrowserProvider): () => void',
+        description: 'Register a provider and bind its cleanup to the contributing fiber.',
+        parameters: [{ name: 'provider', description: 'provider implementation keyed by its stable id.' }],
+        returns: 'a disposer that unregisters and releases the provider.',
+      },
+      {
+        signature: 'async open(url?: string, signal?: AbortSignal): Promise<BrowserTab>',
+        description: 'Create a tab and optionally navigate it.',
+        parameters: [{ name: 'url', description: 'initial URL; omitted to open a blank tab.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'the created tab metadata.',
+      },
+      {
+        signature: 'async tabs(signal?: AbortSignal): Promise<readonly BrowserTab[]>',
+        description: 'List provider-owned tabs.',
+        parameters: [{ name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'metadata for every live tab.',
+      },
+      {
+        signature: 'async navigate(tabId: BrowserTabId, url: string, signal?: AbortSignal): Promise<BrowserTab>',
+        description: 'Navigate one tab.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'url', description: 'destination URL.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'updated tab metadata.',
+      },
+      {
+        signature: 'async snapshot(tabId: BrowserTabId, signal?: AbortSignal): Promise<BrowserSnapshot>',
+        description: 'Capture bounded page state.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'visible text and numbered interactive nodes.',
+      },
+      {
+        signature: 'async click(tabId: BrowserTabId, nodeId: string, signal?: AbortSignal): Promise<BrowserTab>',
+        description: 'Click a snapshot-assigned node.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'nodeId', description: 'node id from the latest snapshot.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'updated tab metadata.',
+      },
+      {
+        signature: 'async fill(tabId: BrowserTabId, nodeId: string, value: string, signal?: AbortSignal): Promise<BrowserTab>',
+        description: 'Fill a snapshot-assigned node.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'nodeId', description: 'node id from the latest snapshot.' }, { name: 'value', description: 'replacement field value.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'updated tab metadata.',
+      },
+      {
+        signature: 'async press(tabId: BrowserTabId, key: string, signal?: AbortSignal): Promise<BrowserTab>',
+        description: 'Send one keyboard key or chord.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'key', description: 'Playwright-compatible key or chord.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'updated tab metadata.',
+      },
+      {
+        signature: 'async scroll(tabId: BrowserTabId, deltaX: number, deltaY: number, signal?: AbortSignal): Promise<BrowserTab>',
+        description: 'Scroll one tab.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'deltaX', description: 'horizontal pixel delta.' }, { name: 'deltaY', description: 'vertical pixel delta.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'updated tab metadata.',
+      },
+      {
+        signature: 'async close(tabId: BrowserTabId, signal?: AbortSignal): Promise<void>',
+        description: 'Close one tab.',
+        parameters: [{ name: 'tabId', description: 'provider-owned tab identifier.' }, { name: 'signal', description: 'optional caller cancellation signal.' }],
+        returns: 'completion after the tab closes.',
+      },
+    ],
+  },
+  {
     key: 'clientModules',
     summary: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index tap.',
     description: 'The web plugin table service: incremental `dsh.client` scan + wire composition + bundle route + index tap. Construction runs the activation scan synchronously — a malformed declaration or missing bundle among the already-loaded entries aggregates into one loud throw (FAILED fiber; the boot activation audit reports it).',
@@ -2732,6 +2799,22 @@ export const TYPE_API: readonly TypeApiEntry[] = [
   {
     name: 'Branded',
     declaration: 'export type Branded<B extends string> = string & {\n    readonly [BRAND]: B;\n};',
+  },
+  {
+    name: 'BrowserProvider',
+    declaration: 'export interface BrowserProvider {\n    readonly id: string;\n    available(): boolean;\n    open(url: string | undefined, signal?: AbortSignal): Promise<BrowserTab>;\n    tabs(signal?: AbortSignal): Promise<readonly BrowserTab[]>;\n    navigate(tabId: BrowserTabId, url: string, signal?: AbortSignal): Promise<BrowserTab>;\n    snapshot(tabId: BrowserTabId, signal?: AbortSignal): Promise<BrowserSnapshot>;\n    click(tabId: BrowserTabId, nodeId: string, signal?: AbortSignal): Promise<BrowserTab>;\n    fill(tabId: BrowserTabId, nodeId: string, value: string, signal?: AbortSignal): Promise<BrowserTab>;\n    press(tabId: BrowserTabId, key: string, signal?: AbortSignal): Promise<BrowserTab>;\n    scroll(tabId: BrowserTabId, deltaX: number, deltaY: number, signal?: AbortSignal): Promise<BrowserTab>;\n    close(tabId: BrowserTabId, signal?: AbortSignal): Promise<void>;\n    dispose(): Promise<void>;\n}',
+  },
+  {
+    name: 'BrowserSnapshot',
+    declaration: 'export interface BrowserSnapshot {\n    readonly tab: BrowserTab;\n    readonly text: string;\n    readonly truncated: boolean;\n}',
+  },
+  {
+    name: 'BrowserTab',
+    declaration: 'export interface BrowserTab {\n    readonly id: BrowserTabId;\n    readonly title: string;\n    readonly url: string;\n}',
+  },
+  {
+    name: 'BrowserTabId',
+    declaration: 'export type BrowserTabId = Branded<\'BrowserTabId\'>;',
   },
   {
     name: 'CancelOptions',

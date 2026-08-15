@@ -87,6 +87,20 @@ export function ValueField(props: FieldProps & {
   )
 }
 
+/** A staged multi-line value field, used for one-host-per-line allowlists. */
+export function TextareaField(props: FieldProps & { placeholder?: string }) {
+  return (
+    <div className={css.field}>
+      <div className={css.head}>
+        <label className={css.label} htmlFor={props.id}>{props.label}</label>
+        {props.overridden ? <span className={css.badges}><span className={css.badge}>{props.overriddenLabel}</span><button type="button" className={css.reset} disabled={props.disabled} onClick={props.onReset}>{props.resetLabel}</button></span> : null}
+      </div>
+      <textarea id={props.id} className={props.invalid ? css.inputInvalid : css.input} aria-invalid={props.invalid || undefined} value={props.text} placeholder={props.placeholder ?? ''} disabled={props.disabled} onChange={(event) => { props.onEdit(event.target.value) }} />
+      <p className={props.invalid ? css.invalid : css.hint}>{props.invalid ? props.invalidLabel : props.hint}</p>
+    </div>
+  )
+}
+
 /**
  * A write-only credential control. The value never rides a response, so the
  * control reports only whether one is configured and starts blank; a blank

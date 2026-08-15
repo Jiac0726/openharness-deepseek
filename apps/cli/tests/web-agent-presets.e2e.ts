@@ -42,7 +42,7 @@ const MINIMAL_BASH_DESCRIPTION = `Run commands in a bash shell
 /**
  * Boot the shipped Web composition, minus the rows that would bind a port,
  * touch the network, or write outside the test. Everything that decides an
- * agent's capabilities is the real thing, including both shipped presets.
+ * agent's capabilities is the real thing, including the shipped presets.
  */
 async function bootWeb(
   settingsFile: string,
@@ -184,10 +184,10 @@ describe('the shipped Web composition', () => {
     }
   })
 
-  it('supplies both shipped presets, and only those, from the system root', async () => {
+  it('supplies the shipped presets, and only those, from the system root', async () => {
     const listed = await ctx.agentPresets.list()
 
-    expect(listed.map(preset => preset.id).sort()).toEqual(['code', 'cordis', 'minimal', 'standard'])
+    expect(listed.map(preset => preset.id).sort()).toEqual(['code', 'cordis', 'minimal', 'minimal-gray', 'standard'])
     expect(listed.every(preset => preset.trust === 'system')).toBe(true)
     expect(ctx.agentPresets.defaultId).toBe('standard')
   })
@@ -230,6 +230,28 @@ describe('the shipped Web composition', () => {
         .toContain('Absolute path')
       expect(ctx.agentPresets.serviceFor(handle.agent, 'compaction')).toBeUndefined()
       expect(handle.agent.ctx.get('compaction')).toBeUndefined()
+    } finally {
+      await handle.dispose()
+    }
+  })
+
+  it('composes the portable cross-platform toolset from `minimal-gray`', async () => {
+    const handle = await ctx.agents.create({
+      sessionId: SessionId('preset-minimal-gray'),
+      setup: agentCtx => ctx.agentPresets.mount(agentCtx, 'minimal-gray').then(() => undefined),
+    })
+    try {
+      const assembly = await ctx.systemPrompt.assemble({ scope: handle.agent })
+      expect(assembly.sections).toEqual([
+        { name: 'deployment:persona', text: MINIMAL_PROMPT },
+      ])
+      const tools = toolNames(ctx, handle.agent).filter(name => name !== 'glob' && name !== 'grep')
+      // Exactly one shell mounts per host, gated by platform: `pwsh` on
+      // Windows, `bash` elsewhere. The minimal preset's PTY stack is absent.
+      expect(tools.filter(name => name === 'bash' || name === 'pwsh')).toHaveLength(1)
+      expect(tools).toEqual(expect.arrayContaining(['edit', 'read', 'read_image', 'todo_write', 'write']))
+      expect(tools).not.toContain('str_replace_editor')
+      expect(ctx.agentPresets.serviceFor(handle.agent, 'compaction')).toBeUndefined()
     } finally {
       await handle.dispose()
     }

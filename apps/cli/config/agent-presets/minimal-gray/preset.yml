@@ -1,0 +1,3 @@
+name: 极简灰度版
+description: 极简模式的跨平台变体：Windows 上以 PowerShell 替代 Bash，并保留文件读写、检索与任务清单等标准模式常用工具。
+order: 5

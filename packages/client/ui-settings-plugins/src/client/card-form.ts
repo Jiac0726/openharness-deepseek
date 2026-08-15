@@ -146,6 +146,25 @@ export function textField(field: string): CardFieldSpec {
 }
 
 /**
+ * A newline-delimited hostname list. Blank lines are ignored and `*` is
+ * rejected so a list cannot change every hostname's policy.
+ * @param field - field name inside the namespace section.
+ * @param allowEmpty - whether an empty field stores an empty list.
+ * @returns the field conversion spec.
+ */
+export function hostnameListField(field: string, allowEmpty = false): CardFieldSpec {
+  return {
+    field,
+    format: value => Array.isArray(value) && value.every(item => typeof item === 'string') ? value.join('\n') : '',
+    parse: (text) => {
+      const hosts = text.split(/\r?\n/).map(host => host.trim().toLowerCase()).filter(Boolean)
+      if ((hosts.length === 0 && !allowEmpty) || hosts.some(host => host === '*' || !/^[a-z0-9.-]+$/.test(host))) return undefined
+      return { kind: 'set', value: [...new Set(hosts)] }
+    },
+  }
+}
+
+/**
  * Stages one card's edits over one settings namespace and writes them on save.
  *
  * The form publishes through a snapshot store because slot components read

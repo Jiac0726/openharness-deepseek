@@ -1,0 +1,23 @@
+# Opt-in overlay for local interactive browser automation. The blocklist rejects
+# every page request, including subresources, that targets a listed hostname.
+
+- id: browser
+  disabled: false
+  config:
+    provider: playwright-local
+
+- id: browser-playwright-local
+  disabled: false
+  config:
+    blockedHosts: []
+    headless: false
+    actionTimeoutMs: 15000
+    maxSnapshotChars: 50000
+    viewportWidth: 1280
+    viewportHeight: 720
+    # Use the system browser on Windows; other platforms use Playwright's
+    # installed Chromium unless this overlay is extended with another channel.
+    channel: !!js "process.platform === 'win32' ? 'msedge' : undefined"
+
+- id: tool-browser
+  disabled: false

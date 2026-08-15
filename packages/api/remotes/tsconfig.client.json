@@ -37,6 +37,9 @@
       "path": "../../host/plugin-inventory"
     },
     {
+      "path": "../../web/browser-playwright-local"
+    },
+    {
       "path": "../../interaction/commands"
     },
     {

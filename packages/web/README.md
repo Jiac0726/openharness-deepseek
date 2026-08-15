@@ -6,6 +6,9 @@ This family provides provider-neutral web search and fetch operations plus the m
 
 | Package | Role | ctx key |
 |---|---|---|
+| [`browser/`](browser/README.md) | Defines interactive browser operations and provider selection | `ctx.browser` |
+| [`browser-playwright-local/`](browser-playwright-local/README.md) | Provides isolated local Chromium automation through Playwright | registers on `ctx.browser` |
+| [`tool-browser/`](tool-browser/README.md) | Exposes interactive browser operations to the model | registers on `ctx.tools` |
 | [`web/`](web/README.md) | Defines web provider registration, selection, and shared errors | `ctx.web` |
 | [`web-search-exa/`](web-search-exa/README.md) | Provides web search through Exa | registers on `ctx.web` |
 | [`web-search-perplexity/`](web-search-perplexity/README.md) | Provides web search through Perplexity | registers on `ctx.web` |

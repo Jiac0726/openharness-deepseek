@@ -128,9 +128,26 @@ function registerTextOnly(ctx: Context): void {
   }('Text Only', []))
 }
 
+function registerUnadvertised(ctx: Context): void {
+  ctx.llm.registerAdapter(['unadvertised'], new class extends CatalogAdapter {
+    override resolveModel(provider: string, model: string): Promise<LlmResolvedModelInfo> {
+      return Promise.resolve({ provider, id: model, name: model })
+    }
+  }('Unadvertised', []))
+}
+
+function registerImageCapable(ctx: Context): void {
+  ctx.llm.registerAdapter(['image-capable'], new class extends CatalogAdapter {
+    override resolveModel(provider: string, model: string): Promise<LlmResolvedModelInfo> {
+      return Promise.resolve({ provider, id: model, name: model, inputModalities: ['text', 'image'] })
+    }
+  }('Image Capable', []))
+}
+
 describe('Web session model selection', () => {
   it('validates an ordered image batch before persisting any member', async () => {
     const { ctx, agent, sessionId } = await harness()
+    registerImageCapable(ctx)
     const validateImage = vi.fn((_input: { data: Uint8Array }) => Promise.resolve())
     const saveImage = vi.fn((input: { data: Uint8Array; mediaType: 'image/png'; name?: string }) => Promise.resolve({
       attachmentId: `att-${String(input.data[0])}`,
@@ -154,7 +171,7 @@ describe('Web session model selection', () => {
     const followup = vi.fn()
     Object.assign(agent, { followup })
     const api = createApiProxy(ctx, {
-      defaultModelSelection: () => ({ provider: 'deepseek-official', model: 'deepseek-chat' }),
+      defaultModelSelection: () => ({ provider: 'image-capable', model: 'vision' }),
       cwd: '/tmp',
     })
 
@@ -193,6 +210,81 @@ describe('Web session model selection', () => {
       error: { code: 'attachment-error', details: { reason: 'TOO_MANY_IMAGES' } },
     })
     expect(saveImage).toHaveBeenCalledTimes(2)
+    await ctx.fiber.dispose()
+  })
+
+  it('queues a Qwen-VL fallback declaration when the route does not advertise image input', async () => {
+    const { ctx, agent, sessionId } = await harness()
+    registerUnadvertised(ctx)
+    ctx.provide('attachments', {
+      imageLimits: {
+        maxImageBytes: 4,
+        maxImagesPerMessage: 2,
+        maxMessageImageBytes: 4,
+        maxImagePixels: 4,
+        mediaTypes: ['image/png'],
+      },
+      validateImage: () => Promise.resolve(),
+      saveImage: () => Promise.resolve({
+        attachmentId: 'sha256:unadvertised-image', mediaType: 'image/png' as const, bytes: 1, width: 1, height: 1,
+      }),
+    } as never)
+    const followup = vi.fn()
+    Object.assign(agent, { followup })
+    const api = createApiProxy(ctx, {
+      defaultModelSelection: () => ({ provider: 'unadvertised', model: 'plain' }),
+      cwd: '/tmp',
+    })
+
+    expect((await api.sessions.prompt(request({
+      sessionId,
+      mode: 'queue' as const,
+      content: [{ type: 'image' as const, mediaType: 'image/png' as const, data: 'AQ==' }],
+    }))).result.ok).toBe(true)
+    expect((followup.mock.calls[0]?.[0] as UserMessage).content[0]).toMatchObject({
+      type: 'text', text: expect.stringContaining('<qwen_image_attachment>'),
+    })
+    await ctx.fiber.dispose()
+  })
+
+  it('queues a Qwen-VL fallback declaration instead of rejecting an image on a text-only route', async () => {
+    const { ctx, agent, sessionId } = await harness()
+    registerTextOnly(ctx)
+    const validateImage = vi.fn(() => Promise.resolve())
+    const saveImage = vi.fn(() => Promise.resolve({
+      attachmentId: 'sha256:fallback-image', mediaType: 'image/png' as const, bytes: 1, width: 1, height: 1,
+    }))
+    ctx.provide('attachments', {
+      imageLimits: {
+        maxImageBytes: 4,
+        maxImagesPerMessage: 2,
+        maxMessageImageBytes: 4,
+        maxImagePixels: 4,
+        mediaTypes: ['image/png'],
+      },
+      validateImage,
+      saveImage,
+    } as never)
+    const followup = vi.fn()
+    Object.assign(agent, { followup })
+    const api = createApiProxy(ctx, {
+      defaultModelSelection: () => ({ provider: 'text-only', model: 'plain' }),
+      cwd: '/tmp',
+    })
+
+    const response = await api.sessions.prompt(request({
+      sessionId,
+      mode: 'queue' as const,
+      content: [{ type: 'image' as const, mediaType: 'image/png' as const, data: 'AQ==' }],
+    }))
+
+    expect(response.result.ok).toBe(true)
+    expect(validateImage).toHaveBeenCalledOnce()
+    expect(saveImage).toHaveBeenCalledOnce()
+    expect((followup.mock.calls[0]?.[0] as UserMessage).content).toEqual([{
+      type: 'text',
+      text: '<qwen_image_attachment>{"attachmentId":"sha256:fallback-image","mediaType":"image/png","bytes":1,"width":1,"height":1}</qwen_image_attachment>\nThe selected model cannot receive this image. Load the qwen-vl-image-analysis skill, then call analyze_image with this attachment object and the user\'s request.',
+    }])
     await ctx.fiber.dispose()
   })
 

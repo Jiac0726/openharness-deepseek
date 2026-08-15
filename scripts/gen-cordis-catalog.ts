@@ -104,6 +104,7 @@ export const SERVICE_PAGE: Record<string, string> = {
   typertGateway: 'typert.md',
   userQuestions: 'user-questions.md',
   web: 'web.md',
+  browser: 'browser.md',
   workflowEngine: 'workflow.md',
   workspaceRegistry: 'workspace.md',
 }
@@ -220,6 +221,10 @@ export const LINK_MAP: Readonly<Record<string, string>> = {
   ModelSelection: 'core.md',
   AgentOptions: 'core.md',
   AgentStatus: 'core.md',
+  BrowserProvider: 'browser.md',
+  BrowserSnapshot: 'browser.md',
+  BrowserTab: 'browser.md',
+  BrowserTabId: 'browser.md',
   ContentBlock: 'llm-streaming.md',
   CreateAgentOptions: 'core.md',
   GenerateOptions: 'llm-streaming.md',

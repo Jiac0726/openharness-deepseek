@@ -417,6 +417,24 @@
         fetch: false
         searchTimeoutMs: 60000
 
+    # Interactive browser automation is installed but opt-in. Enable these three
+    # rows from a profile or --patch layer and choose any blocked hostnames.
+    - id: browser
+      name: '@deepseek-ai/dsh-browser'
+      disabled: true
+      config:
+        provider: playwright-local
+
+    - id: browser-playwright-local
+      name: '@deepseek-ai/dsh-browser-playwright-local'
+      disabled: true
+      config:
+        blockedHosts: []
+
+    - id: tool-browser
+      name: '@deepseek-ai/dsh-tool-browser'
+      disabled: true
+
     # ── rows every mode mounts, whose values each overlay may state ──────────────
 
     # The tool registry. Presentation mode is a deployment choice; omitting it here

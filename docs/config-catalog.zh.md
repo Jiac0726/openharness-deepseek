@@ -389,6 +389,50 @@ export type Config = LocalConfig
 
 来源：[`packages/shell/bash-sandbox/src/index.ts:35`](../packages/shell/bash-sandbox/src/index.ts)
 
+<a id="deepseek-aidsh-browser"></a>
+
+## `@deepseek-ai/dsh-browser`
+
+```ts config-catalog
+/** Browser provider selection config. */
+export interface BrowserRuntimeConfig {
+  /** Explicit provider id; omitted only when exactly one usable provider is mounted. */
+  readonly provider?: string
+}
+```
+
+来源：[`packages/web/browser/src/index.ts:24`](../packages/web/browser/src/index.ts)
+
+<a id="deepseek-aidsh-browser-playwright-local"></a>
+
+## `@deepseek-ai/dsh-browser-playwright-local`
+
+需要：`browser`
+
+```ts config-catalog
+/** Local browser process, navigation-policy, action, and snapshot limits. */
+export interface Config {
+  /** Exact hostnames the browser must not navigate to or request. */
+  blockedHosts?: string[]
+  /** Run without a visible browser window. */
+  headless?: boolean
+  /** Playwright action and navigation timeout. */
+  actionTimeoutMs?: number
+  /** Maximum DOM snapshot characters returned to a consumer. */
+  maxSnapshotChars?: number
+  /** Browser viewport width. */
+  viewportWidth?: number
+  /** Browser viewport height. */
+  viewportHeight?: number
+  /** Explicit browser executable. Mutually exclusive with `channel`. */
+  executablePath?: string
+  /** Installed Playwright browser channel, such as `chrome` or `msedge`. */
+  channel?: string
+}
+```
+
+来源：[`packages/web/browser-playwright-local/src/index.ts:21`](../packages/web/browser-playwright-local/src/index.ts)
+
 <a id="deepseek-aidsh-client-connection"></a>
 
 ## `@deepseek-ai/dsh-client-connection`
@@ -2391,10 +2435,16 @@ export interface Config {
   readMaxBytes?: number
   /** Files at or above this size stream instead of loading whole into memory. */
   readStreamMinSize?: number
+  /** Environment variable holding the DashScope key used by `analyze_image`. */
+  qwenImageAnalysisApiKeyEnv?: string
+  /** DashScope-compatible API root used by `analyze_image`. */
+  qwenImageAnalysisBaseUrl?: string
+  /** Qwen-VL model selected by `analyze_image` when its call omits `model`. */
+  qwenImageAnalysisModel?: string
 }
 ```
 
-来源：[`packages/fs/tool-fs/src/index.ts:25`](../packages/fs/tool-fs/src/index.ts)
+来源：[`packages/fs/tool-fs/src/index.ts:34`](../packages/fs/tool-fs/src/index.ts)
 
 <a id="deepseek-aidsh-tool-fs-search"></a>
 
@@ -3087,6 +3137,7 @@ export interface Config {
 - `@deepseek-ai/dsh-subprocess-local`（[`packages/subprocess/subprocess-local/src/index.ts`](../packages/subprocess/subprocess-local/src/index.ts)）
 - `@deepseek-ai/dsh-terminal`（[`packages/terminal/terminal/src/index.ts`](../packages/terminal/terminal/src/index.ts)）
 - `@deepseek-ai/dsh-tool-ask-user` — 需要 `tools` · `userInteraction`（[`packages/interaction/tool-ask-user/src/index.ts`](../packages/interaction/tool-ask-user/src/index.ts)）
+- `@deepseek-ai/dsh-tool-browser` — 需要 `tools` · `browser`（[`packages/web/tool-browser/src/index.ts`](../packages/web/tool-browser/src/index.ts)）
 - `@deepseek-ai/dsh-tool-call-timeout-policy` — 需要 `tools`（[`packages/guard/timeout-policy/src/index.ts`](../packages/guard/timeout-policy/src/index.ts)）
 - `@deepseek-ai/dsh-tool-cordis` — 需要 `tools` · `systemPrompt` · `dynamicCordisRunner` · `cordisInspect`（[`packages/extensions/tool-cordis/src/index.ts`](../packages/extensions/tool-cordis/src/index.ts)）
 - `@deepseek-ai/dsh-tool-subagent-control` — 需要 `tools` · `subagents`（[`packages/subagent/tool-subagent-control/src/index.ts`](../packages/subagent/tool-subagent-control/src/index.ts)）

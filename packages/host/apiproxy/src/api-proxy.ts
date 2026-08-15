@@ -124,7 +124,7 @@ const DEFAULT_MAX_MESSAGES = 50
  * is deferred work.
  */
 const WEB_SETTINGS_NAMESPACES = [
-  'agent-loop', 'shell', 'locale', 'permission', 'ui-conversation', 'ui-theme', 'web-search-deepseek',
+  'agent-loop', 'browser-playwright-local', 'shell', 'locale', 'permission', 'ui-conversation', 'ui-theme', 'web-search-deepseek',
 ] as const
 
 /** Provider work budget: at most 100 calls and 2,000 inspected hits. */
@@ -148,7 +148,11 @@ function decodeBase64(data: string): Uint8Array {
 }
 
 /** Validate one prompt as a batch before publishing any durable image object. */
-async function durablePromptContent(ctx: Context, content: readonly PromptContentPart[]): Promise<ContentBlock[]> {
+async function durablePromptContent(
+  ctx: Context,
+  content: readonly PromptContentPart[],
+  imageFallback = false,
+): Promise<ContentBlock[]> {
   if (content.every(part => part.type === 'text')) {
     return content.map(part => ({ type: 'text', text: part.text }))
   }
@@ -182,7 +186,12 @@ async function durablePromptContent(ctx: Context, content: readonly PromptConten
       mediaType: item.part.mediaType,
       ...item.part.name === undefined ? {} : { name: item.part.name },
     })
-    blocks.push({ type: 'image', attachment })
+    blocks.push(imageFallback
+      ? {
+        type: 'text',
+        text: `<qwen_image_attachment>${JSON.stringify(attachment)}</qwen_image_attachment>\nThe selected model cannot receive this image. Load the qwen-vl-image-analysis skill, then call analyze_image with this attachment object and the user's request.`,
+      }
+      : { type: 'image', attachment })
   }
   return blocks
 }
@@ -2482,18 +2491,15 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         const hasImage = content.some(part => part.type === 'image')
         const admit = async (): Promise<RpcResponse<{ accepted: true }>> => {
           try {
+            let imageFallback = false
             if (hasImage) {
               const current = selectionFor(agent).current
               const modelInfo = await ctx.llm.resolveModelInfo(current.provider, current.model)
-              if (modelInfo.inputModalities !== undefined && !modelInfo.inputModalities.includes('image')) {
-                return err(request, {
-                  code: 'attachment-error',
-                  message: `Model "${current.model}" does not support image input.`,
-                  details: { reason: 'MODEL_DOES_NOT_SUPPORT_IMAGES' },
-                })
+              if (!modelInfo.inputModalities?.includes('image')) {
+                imageFallback = true
               }
             }
-            const durable = await durablePromptContent(ctx, content)
+            const durable = await durablePromptContent(ctx, content, imageFallback)
             const message: UserMessage = createUserMessage({ content: durable, source })
             if (mode === 'steer') agent.steer(message)
             else agent.followup(message)

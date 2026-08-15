@@ -11,6 +11,7 @@ export type PluginsSettingsLocaleKey =
   | 'webSearchTitle' | 'webSearchDescription'
   | 'webSearchApiKey' | 'webSearchApiKeyHint' | 'webSearchApiKeySet' | 'webSearchApiKeyUnset'
   | 'webSearchBaseUrl' | 'webSearchBaseUrlHint' | 'webSearchMaxUses' | 'webSearchMaxUsesHint'
+  | 'browserTitle' | 'browserDescription' | 'browserBlockedHosts' | 'browserBlockedHostsHint' | 'browserBlockedHostsInvalid'
 
 /** English copy. */
 export const en: Record<PluginsSettingsLocaleKey, string> = {
@@ -51,10 +52,16 @@ export const en: Record<PluginsSettingsLocaleKey, string> = {
   webSearchBaseUrlHint: 'Leave blank to use the provider default.',
   webSearchMaxUses: 'Max searches per request',
   webSearchMaxUsesHint: 'How many times one request may search before it must answer.',
+  browserTitle: 'Browser control',
+  browserDescription: 'Navigation blacklist for the isolated browser.',
+  browserBlockedHosts: 'Blocked hosts',
+  browserBlockedHostsHint: 'Enter one hostname per line. Leave empty to allow all hosts. Changes apply to the next navigation and request immediately.',
+  browserBlockedHostsInvalid: 'Enter exact hostnames, one per line. Wildcards and URL paths are not accepted here.',
 }
 
 /** Simplified Chinese copy. */
 export const zh: Record<PluginsSettingsLocaleKey, string> = {
+  ...en,
   nav: '插件',
   title: '插件',
   intro: '配置和查看本部署已安装的插件。',
@@ -92,4 +99,8 @@ export const zh: Record<PluginsSettingsLocaleKey, string> = {
   webSearchBaseUrlHint: '留空则使用提供方默认地址。',
   webSearchMaxUses: '单次请求最多搜索次数',
   webSearchMaxUsesHint: '一次请求在必须作答前最多可以搜索多少次。',
+  browserDescription: '隔离浏览器的导航黑名单。',
+  browserBlockedHosts: '已阻止的主机',
+  browserBlockedHostsHint: '每行输入一个主机名。留空表示允许所有主机；改动会立即应用到下一次导航和请求。',
+  browserBlockedHostsInvalid: '请每行输入一个精确主机名；不接受通配符和 URL 路径。',
 }

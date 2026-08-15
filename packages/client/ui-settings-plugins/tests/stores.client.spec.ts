@@ -8,6 +8,7 @@ import { stubSettingsScope, type StubSettingsScope } from '@deepseek-ai/dsh-clie
 import { CardForm, numberField, textField } from '../src/client/card-form.ts'
 import { AgentLoopCardController, type AgentLoopSettings } from '../src/client/agent-loop-card-controller.ts'
 import { BashCardController, type BashSettings } from '../src/client/bash-card-controller.ts'
+import { BrowserCardController, type BrowserSettings } from '../src/client/browser-card-controller.ts'
 import { WebSearchCardController, type WebSearchSettings } from '../src/client/web-search-card-controller.ts'
 
 /** Make the stub behave like a Host that accepts every write. */
@@ -270,6 +271,35 @@ describe('CardForm', () => {
     host.publish({ status: 'unavailable' })
 
     expect(subject.shell()).toMatchObject({ available: false, writable: false })
+  })
+})
+
+describe('BrowserCardController', () => {
+  it('saves a normalized blacklist and permits an empty list', async () => {
+    const host = stubSettingsScope<BrowserSettings>()
+    acceptWrites(host)
+    const controller = new BrowserCardController(host.scope)
+    host.publish({
+      status: 'ready',
+      writable: true,
+      value: { blockedHosts: [] },
+      base: { blockedHosts: [] },
+      user: {},
+    })
+    const face = controller.inject()
+
+    face.edit('blockedHosts', 'Example.com\nads.example')
+    face.save()
+    await vi.waitFor(() => { expect(host.set).toHaveBeenCalledWith('blockedHosts', ['example.com', 'ads.example']) })
+    await vi.waitFor(() => { expect(face.hooks.browserCard.getSnapshot().saving).toBe(false) })
+
+    face.edit('blockedHosts', '')
+    face.save()
+    await vi.waitFor(() => { expect(host.set).toHaveBeenLastCalledWith('blockedHosts', []) })
+    expect(face.hooks.browserCard.getSnapshot()).toMatchObject({
+      dirty: false,
+      blockedHosts: { text: '', overridden: true, invalid: false },
+    })
   })
 })
 

@@ -22,6 +22,7 @@ import { resolveSlotLabel } from '@deepseek-ai/dsh-client-ui-slots'
 import type {} from '@deepseek-ai/dsh-api-remotes/client'
 import { AgentLoopCard } from './AgentLoopCard.tsx'
 import { BashCard } from './BashCard.tsx'
+import { BrowserCard } from './BrowserCard.tsx'
 import { ConfigurablePluginsTab } from './ConfigurablePluginsTab.tsx'
 import type { ConfigurablePluginsTabInjected } from './ConfigurablePluginsTab.tsx'
 import { PluginsSettingsSection } from './PluginsSettingsSection.tsx'
@@ -29,6 +30,7 @@ import type { PluginsSettingsSectionInjected, PluginsSettingsTabEntry } from './
 import { WebSearchCard } from './WebSearchCard.tsx'
 import { AGENT_LOOP_NS, AgentLoopCardController } from './agent-loop-card-controller.ts'
 import { SHELL_NS, BashCardController } from './bash-card-controller.ts'
+import { BROWSER_PLAYWRIGHT_LOCAL_NS, BrowserCardController } from './browser-card-controller.ts'
 import { WEB_SEARCH_NS, WebSearchCardController } from './web-search-card-controller.ts'
 import { en, zh } from './locales.ts'
 
@@ -43,6 +45,7 @@ export type {
 export type { AgentLoopCardFace, AgentLoopCardState } from './agent-loop-card-controller.ts'
 export type { BashCardFace, BashCardState } from './bash-card-controller.ts'
 export type { WebSearchCardFace, WebSearchCardState } from './web-search-card-controller.ts'
+export type { BrowserCardFace, BrowserCardState } from './browser-card-controller.ts'
 
 /** Dictionary namespace owned by this plugin. */
 const NS = 'settings.plugins'
@@ -60,6 +63,7 @@ export function apply(ctx: ClientContext): void {
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'ui-settings-plugins: section dictionaries')
 
   const bash = new BashCardController(ctx.settingsScope.bind({ namespace: SHELL_NS }))
+  const browser = new BrowserCardController(ctx.settingsScope.bind({ namespace: BROWSER_PLAYWRIGHT_LOCAL_NS }))
   const agentLoop = new AgentLoopCardController(ctx.settingsScope.bind({ namespace: AGENT_LOOP_NS }))
   const webSearch = new WebSearchCardController(ctx.settingsScope.bind({ namespace: WEB_SEARCH_NS }), api)
 
@@ -140,6 +144,13 @@ export function apply(ctx: ClientContext): void {
       locale: NS,
       inject: () => bash.inject(),
     }, BashCard)
+    yield ctx.slots.register({
+      name: 'settings.plugin.item',
+      id: 'browser',
+      order: 5,
+      locale: NS,
+      inject: () => browser.inject(),
+    }, BrowserCard)
     yield ctx.slots.register({
       name: 'settings.plugin.item',
       id: 'agent-loop',

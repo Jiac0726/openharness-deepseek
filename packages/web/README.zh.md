@@ -6,6 +6,9 @@
 
 | 包 | 职责 | ctx key |
 |---|---|---|
+| [`browser/`](browser/README.md) | 定义交互式浏览器操作和提供方选择 | `ctx.browser` |
+| [`browser-playwright-local/`](browser-playwright-local/README.md) | 通过 Playwright 提供隔离的本地 Chromium 自动化 | 注册到 `ctx.browser` |
+| [`tool-browser/`](tool-browser/README.md) | 向模型公开交互式浏览器操作 | 注册到 `ctx.tools` |
 | [`web/`](web/README.md) | 定义 web 提供方注册、选择和共享错误 | `ctx.web` |
 | [`web-search-exa/`](web-search-exa/README.md) | 通过 Exa 提供 web 搜索 | 注册到 `ctx.web` |
 | [`web-search-perplexity/`](web-search-perplexity/README.md) | 通过 Perplexity 提供 web 搜索 | 注册到 `ctx.web` |

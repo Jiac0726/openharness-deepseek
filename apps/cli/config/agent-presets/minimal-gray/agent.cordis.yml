@@ -1,0 +1,50 @@
+# The `minimal-gray` agent preset: `minimal`'s fixed prompt and small
+# toolset, made portable across hosts. `minimal` mounts a bash-only PTY stack,
+# which cannot run on Windows; this preset carries over the standard preset's
+# platform-gated shell tools so a Windows session drives PowerShell and a
+# POSIX session drives Bash, and adds the common file and task-tracking tools.
+#
+# Everything else stays minimal: a complete fixed persona, no runtime context,
+# no compaction, no skills, no goals, no plan mode, and no delegation.
+
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: You are a helpful software engineer assistant.
+    complete: true
+    includeRuntimeContext: false
+
+# ── shell ───────────────────────────────────────────────────────────────────
+
+# The platform-gated pair from `standard`: exactly one mounts per host, so the
+# Windows counter is `tool-pwsh` (PowerShell) instead of `minimal`'s bash-only
+# PTY. `shell-env` and the executors (`bash-sandbox`/`pwsh-sandbox`) stay in
+# the HOST composition; these rows only register the model-facing tool against
+# the host registry.
+- id: tool-bash
+  name: '@deepseek-ai/dsh-tool-bash'
+  disabled: !!js process.platform === 'win32'
+
+- id: tool-pwsh
+  name: '@deepseek-ai/dsh-tool-pwsh'
+  disabled: !!js process.platform !== 'win32'
+
+# ── filesystem ──────────────────────────────────────────────────────────────
+
+# The common file tools from `standard`: read/write/edit plus glob/grep search.
+# Both register into the host `tools` registry and provide nothing, so they
+# need no realm; the `fs` service and its policy stay in the host.
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+# ── task tracking ───────────────────────────────────────────────────────────
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config:
+    allowParallelInProgress: true
